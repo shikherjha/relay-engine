@@ -10,11 +10,12 @@ import (
 )
 
 type Handler struct {
-	cfg config.Config
+	cfg    config.Config
+	scorer scoring.Scorer
 }
 
 func New(cfg config.Config) *Handler {
-	return &Handler{cfg: cfg}
+	return &Handler{cfg: cfg, scorer: scoring.NewScorer(cfg.DispositionScorer)}
 }
 
 func writeJSON(w http.ResponseWriter, status int, body any) {
@@ -48,7 +49,7 @@ func (h *Handler) DispositionScore() http.HandlerFunc {
 		if !decode(w, r, &req) {
 			return
 		}
-		writeJSON(w, http.StatusOK, scoring.Score(req))
+		writeJSON(w, http.StatusOK, h.scorer.Score(req))
 	}
 }
 

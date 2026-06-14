@@ -13,6 +13,9 @@ type Config struct {
 	RescueDiscountBase  float64
 	RescueDiscountMax   float64
 	PairRescueRadiusKm  float64
+	// DispositionScorer selects the routing policy: "rules" (default) or "rl"
+	// (future RL policy; falls back to rules until trained). See engine-rl-hook.
+	DispositionScorer string
 }
 
 func Load() Config {
@@ -23,6 +26,7 @@ func Load() Config {
 		RescueDiscountBase:  getenvFloat("RESCUE_DISCOUNT_BASE", 0.15),
 		RescueDiscountMax:   getenvFloat("RESCUE_DISCOUNT_MAX", 0.45),
 		PairRescueRadiusKm:  getenvFloat("PAIR_RESCUE_RADIUS_KM", 10.0),
+		DispositionScorer:   getenv("DISPOSITION_SCORER", "rules"),
 	}
 }
 
