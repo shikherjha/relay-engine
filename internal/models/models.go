@@ -37,15 +37,18 @@ type ConditionPassport struct {
 type DemandSignal struct {
 	OpenWishCount int     `json:"open_wish_count"`
 	DemandScore   float64 `json:"demand_score"`
+	NearestKm     float64 `json:"nearest_km,omitempty"`
 }
 
 type DispositionRequest struct {
-	UnitID       string            `json:"unit_id"`
-	Passport     ConditionPassport `json:"passport"`
-	ReturnReason string            `json:"return_reason"`
-	UserID       string            `json:"user_id,omitempty"`
-	Geo          *Geo              `json:"geo,omitempty"`
-	Demand       *DemandSignal     `json:"demand,omitempty"`
+	UnitID            string            `json:"unit_id"`
+	Passport          ConditionPassport `json:"passport"`
+	ReturnReason      string            `json:"return_reason"`
+	UserID            string            `json:"user_id,omitempty"`
+	Geo               *Geo              `json:"geo,omitempty"`
+	Demand            *DemandSignal     `json:"demand,omitempty"`
+	TransferCount     int               `json:"transfer_count,omitempty"`
+	ExchangeAvailable bool              `json:"exchange_available,omitempty"`
 }
 
 type DispositionResponse struct {

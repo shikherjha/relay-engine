@@ -6,6 +6,7 @@ import (
 
 	"github.com/shikherjha/relay-engine/internal/config"
 	"github.com/shikherjha/relay-engine/internal/models"
+	"github.com/shikherjha/relay-engine/internal/scoring"
 )
 
 type Handler struct {
@@ -23,9 +24,9 @@ func writeJSON(w http.ResponseWriter, status int, body any) {
 }
 
 func decode(w http.ResponseWriter, r *http.Request, dst any) bool {
-	dec := json.NewDecoder(r.Body)
-	dec.DisallowUnknownFields()
-	if err := dec.Decode(dst); err != nil {
+	// Lenient: the engine reads a subset of the ConditionPassport; ignore the
+	// richer fields relay-ml/relay-api include (schema_version, media_hashes, …).
+	if err := json.NewDecoder(r.Body).Decode(dst); err != nil {
 		writeJSON(w, http.StatusBadRequest, models.Error{Error: "invalid_body", Detail: err.Error()})
 		return false
 	}
@@ -40,20 +41,14 @@ func (h *Handler) Health(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
-// DispositionScore — POST /disposition/score  (scoring logic lands in T1).
+// DispositionScore — POST /disposition/score  (authoritative rule engine).
 func (h *Handler) DispositionScore() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var req models.DispositionRequest
 		if !decode(w, r, &req) {
 			return
 		}
-		resp := models.DispositionResponse{
-			Channel:           "",
-			Score:             0,
-			Reasons:           []string{"T0 skeleton — scoring lands in T1 (engine-disposition)"},
-			GuardrailsApplied: []string{},
-		}
-		writeJSON(w, http.StatusOK, resp)
+		writeJSON(w, http.StatusOK, scoring.Score(req))
 	}
 }
 
