@@ -26,6 +26,9 @@ func main() {
 	r.Route("/disposition", func(r chi.Router) {
 		r.Post("/score", h.DispositionScore())
 	})
+	r.Route("/dispatch", func(r chi.Router) {
+		r.Post("/score", h.DispatchScore())
+	})
 	r.Route("/match", func(r chi.Router) {
 		r.Post("/rescue", h.MatchRescue())
 		r.Post("/wishlist", h.MatchWishlist())

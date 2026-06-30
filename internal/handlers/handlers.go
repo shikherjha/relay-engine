@@ -53,6 +53,19 @@ func (h *Handler) DispositionScore() http.HandlerFunc {
 	}
 }
 
+// DispatchScore — POST /dispatch/score  (Rescue Dispatch Score, §21.4). Ranks
+// each (unit, viewer) edge by weighted business utility + emits human reasons.
+func (h *Handler) DispatchScore() http.HandlerFunc {
+	weights := scoring.DispatchWeightsFromConfig(h.cfg)
+	return func(w http.ResponseWriter, r *http.Request) {
+		var req models.DispatchRequest
+		if !decode(w, r, &req) {
+			return
+		}
+		writeJSON(w, http.StatusOK, scoring.ScoreDispatch(req, weights))
+	}
+}
+
 // MatchRescue — POST /match/rescue  (geo + TTL logic lands in T1).
 func (h *Handler) MatchRescue() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {

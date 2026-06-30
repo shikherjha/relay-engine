@@ -117,6 +117,68 @@ type PairRescueResponse struct {
 	Pairs []PairMatch `json:"pairs"`
 }
 
+// ---- rescue dispatch score (Uber/FoodMatch-style local allocation) ----
+//
+// Per-viewer edge utility for the rescue feed: each candidate is one rescue
+// listing scored *for* a specific buyer. relay-api precomputes every signal
+// from Postgres (demand near the unit, the viewer's own wish match, distance,
+// TTL decay, grade, transfer depth, price fit) — the engine stays stateless and
+// just applies the weighted utility + emits human reasons.
+
+// DispatchViewer is the buyer the feed is being scored for.
+type DispatchViewer struct {
+	UserID     string  `json:"user_id,omitempty"`
+	Eligible   bool    `json:"eligible"`
+	ReturnRate float64 `json:"return_rate,omitempty"`
+}
+
+// DispatchCandidate is one rescue listing edge (this unit x this viewer).
+type DispatchCandidate struct {
+	ListingID string  `json:"listing_id"`
+	UnitID    string  `json:"unit_id,omitempty"`
+	Channel   string  `json:"channel,omitempty"` // rescue | refurb (carbon base)
+	Scope     string  `json:"scope,omitempty"`   // local | national
+
+	GradeNumeric float64 `json:"grade_numeric,omitempty"`
+	// Viewer→unit distance (km); nil ⇒ ships (national, no local distance win).
+	DistanceKm *float64 `json:"distance_km,omitempty"`
+	RadiusKm   float64  `json:"radius_km,omitempty"`
+	// Last-mile estimate for the carbon term.
+	DeliveryKm float64 `json:"delivery_km,omitempty"`
+	// remaining/ttl in [0,1] (1=fresh, 0=expiring); nil ⇒ no decay (national).
+	TtlRemainingFrac *float64 `json:"ttl_remaining_frac,omitempty"`
+	TransferCount    int      `json:"transfer_count,omitempty"`
+	// Open-wish demand near the unit (the same signal that feeds disposition).
+	Demand *DemandSignal `json:"demand,omitempty"`
+	// 0..1 — how strongly THIS viewer's own open wishes want this unit.
+	ViewerWishMatch float64 `json:"viewer_wish_match,omitempty"`
+	PriceFit        bool    `json:"price_fit,omitempty"`
+	SizeFit         bool    `json:"size_fit,omitempty"`
+	DiscountPct     float64 `json:"discount_pct,omitempty"`
+}
+
+// DispatchReason is a human, explainable reason a listing is surfaced.
+type DispatchReason struct {
+	Code  string `json:"code"`
+	Label string `json:"label"`
+}
+
+// DispatchScore is one scored listing edge.
+type DispatchScore struct {
+	ListingID       string           `json:"listing_id"`
+	DispatchScore   float64          `json:"dispatch_score"`
+	DispatchReasons []DispatchReason `json:"dispatch_reasons"`
+}
+
+type DispatchRequest struct {
+	Viewer     DispatchViewer      `json:"viewer"`
+	Candidates []DispatchCandidate `json:"candidates"`
+}
+
+type DispatchResponse struct {
+	Scores []DispatchScore `json:"scores"`
+}
+
 // Error is the shared error envelope.
 type Error struct {
 	Error  string `json:"error"`
